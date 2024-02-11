@@ -1,0 +1,10 @@
+NEAT
+DQN
+??? inca unul
+??? inca unul
+
+- documentam pe fiecare
+- facem comparatii: distanta in 30 de secunde pe fiecare traseu
+- cursa cu toate + coliziune de masini OPT
+- generare de trasee OPT
+- generare trackuri OPT
