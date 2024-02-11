@@ -90,10 +90,7 @@ class Car:
 
     def is_collision(self):
         """
-        Determines if the given point collides with the border based on the color.
-
-        Args:
-            point (tuple): The (x, y) coordinates of the point to check for collision.
+        Determines if the car collides with the border based on the color.
 
         Returns:
             bool: True if the point collides with the border, False otherwise.
@@ -116,6 +113,15 @@ class Car:
         return False
     
     def is_collision_points(self, x, y):
+        """
+        Determines if the given point collides with the border based on the color.
+
+        Args:
+            x, y: The (x, y) coordinates of the point to check for collision.
+
+        Returns:
+            bool: True if the point collides with the border, False otherwise.
+        """
         return self.is_out_of_bounds(x, y) or self.game_map.get_at((x, y)) == self.border_color
         
 
