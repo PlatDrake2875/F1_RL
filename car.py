@@ -37,16 +37,32 @@ class Car:
     def is_out_of_bounds(self, x , y):
         return x < 0 or x >= self.map_width or y < 0 or y >= self.map_height
         
-    def is_collision(self, point):
-        return self.game_map.get_at((int(point[0]), int(point[1]))) == self.border_color
+    def is_collision(self):
+        # Check if the corners are out of bounds
+        for corner in self.corners:
+            if self.is_out_of_bounds(corner[0], corner[1]):
+                return True
+        
+        # Check if the line between the corners intersects with the border
+        for i in range(4):
+            x1, y1 = int(self.corners[i][0]), int(self.corners[i][1])
+            x2, y2 = int(self.corners[(i + 1) % 4][0]), int(self.corners[(i + 1) % 4][1])
+            
+            for x in range(min(x1, x2), max(x1, x2)):
+                y = int((y2 - y1) / (x2 - x1) * (x - x1) + y1)
+                if self.is_collision_points(x, y):
+                    return True
+                    
+        return False
+    
+    def is_collision_points(self, x, y):
+        return self.is_out_of_bounds(x, y) or self.game_map.get_at((x, y)) == self.border_color
         
     def check_collision(self):
         self.alive = True
         
-        for corner in self.corners:
-            if self.is_collision(corner):
-                self.alive = False
-                break
+        if self.is_collision():
+            self.alive = False
         
     def rotate_center(self, image, angle):
         orig_rect = image.get_rect()
