@@ -42,7 +42,7 @@ class Track:
         self.height = self.game_map.get_height()
         self.set_starting_position()
 
-    def find_pixel(self, start, end, step, condition):
+    def find_pixel(self, start, end, step, condition, first_axis = 1):
         """Finds a pixel that meets a given condition.
 
         Args:
@@ -54,10 +54,16 @@ class Track:
         Returns:
             tuple: The coordinates of the found pixel, or None if no pixel meets the condition.
         """
-        for x in range(start, end, step):
-            for y in range(self.height):
-                if condition(self.game_map.get_at((x, y))):
-                    return x, y
+        if first_axis == 1:
+            for x in range(start, end, step):
+                for y in range(self.height):
+                    if condition(self.game_map.get_at((x, y))):
+                        return x, y
+        else:
+            for y in range(start, end, step):
+                for x in range(self.width):
+                    if condition(self.game_map.get_at((x, y))):
+                        return x, y
         return None
 
     def set_starting_position(self):
@@ -69,8 +75,8 @@ class Track:
         Returns:
             tuple: The x and y coordinates and angle of the starting position.
         """
-        bottom_left_green = self.find_pixel(0, self.width, 1, lambda color: color == (0, 255, 0, 255))
-        top_left_green = self.find_pixel(self.width - 1, -1, -1, lambda color: color == (0, 255, 0, 255))
+        bottom_left_green = self.find_pixel(0, self.width, 1, lambda color: color == (0, 255, 0, 255), 1)
+        top_left_green = self.find_pixel(self.height - 1, -1, -1, lambda color: color == (0, 255, 0, 255), 0)
 
         if bottom_left_green and top_left_green:
             angle = math.atan2(top_left_green[0] - bottom_left_green[0],
