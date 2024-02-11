@@ -88,7 +88,7 @@ class Car:
         """
         return x < 0 or x >= self.map_width or y < 0 or y >= self.map_height
 
-    def is_collision(self, point):
+    def is_collision(self):
         """
         Determines if the given point collides with the border based on the color.
 
@@ -130,10 +130,9 @@ class Car:
         """
         self.alive = True
 
-        for corner in self.corners:
-            if self.is_collision(corner):
-                self.alive = False
-                return
+        if self.is_collision():
+            self.alive = False
+            return
 
     @staticmethod
     def rotate_center(image, angle):
