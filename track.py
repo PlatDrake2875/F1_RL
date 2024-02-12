@@ -17,6 +17,8 @@ class Track:
         map_width (int): The width of the map area.
         map_height (int): The height of the map area.
     """
+    
+    START_LINE_COLOR = (0, 255, 0, 255)
 
     def __init__(self, track_file, border_color=(255, 255, 255, 255), map_width=1920, map_height=1080):
         """Initializes the Track with the given parameters.
@@ -65,6 +67,15 @@ class Track:
                     if condition(self.game_map.get_at((x, y))):
                         return x, y
         return None
+    
+    def get_start_line_points(self):
+        bottom_left_green = self.find_pixel(0, self.width, 1, lambda color: color == Track.START_LINE_COLOR, 1)
+        top_left_green = self.find_pixel(self.height - 1, -1, -1, lambda color: color == Track.START_LINE_COLOR, 0)
+        
+        return (bottom_left_green, top_left_green)
+    
+    def is_start_line_touch(self, x, y):
+        return not self.out_of_bounds(x, y) and self.game_map.get_at((x, y)) == Track.START_LINE_COLOR
 
     def set_starting_position(self):
         """Determines the starting position on the track based on specific criteria.
@@ -75,8 +86,7 @@ class Track:
         Returns:
             tuple: The x and y coordinates and angle of the starting position.
         """
-        bottom_left_green = self.find_pixel(0, self.width, 1, lambda color: color == (0, 255, 0, 255), 1)
-        top_left_green = self.find_pixel(self.height - 1, -1, -1, lambda color: color == (0, 255, 0, 255), 0)
+        bottom_left_green, top_left_green = self.get_start_line_points()
 
         if bottom_left_green and top_left_green:
             angle = math.atan2(top_left_green[0] - bottom_left_green[0],

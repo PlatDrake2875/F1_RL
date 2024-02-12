@@ -1,6 +1,8 @@
 import pygame as pg
 import math
 
+from track import Track
+
 
 class Car:
     """
@@ -34,7 +36,7 @@ class Car:
     CAR_SIZE_Y = 60
 
     def __init__(self, car_sprite, pos_x, pos_y, angle, speed, game_map, border_color,
-                 map_width, map_height):
+                 map_width, map_height, top_start_point, bottom_start_point):
         """
         Initializes the Car object with specified attributes and sprite.
 
@@ -65,6 +67,10 @@ class Car:
         self.corners = []
         self.game_map = game_map
         self.border_color = border_color
+        self.angles = []
+        self.speed_changes = 0
+        self.top_start_point = top_start_point
+        self.bottom_start_point = bottom_start_point
 
     def draw(self, screen):
         """
@@ -256,4 +262,67 @@ class Car:
             bool: True if the car is operational (alive), False otherwise.
         """
         return self.alive
+    
+    def move(self, move_number):
+        if move_number == 0:
+            self.change_angle(10) # Turn left
+            self.change_speed(-1) # Slow down
+        elif move_number == 1:
+            self.change_angle(-10) # Turn right
+            self.change_speed(-1) # Slow down
+        elif move_number == 2:
+            self.change_angle(20) # Turn hard  left
+            self.change_speed(-2) # Slow down
+        elif move_number == 3:
+            self.change_angle(-20) # Turn hard right
+            self.change_speed(-2) # Slow down
+        elif move_number == 4:
+            self.change_angle(0) # Go straight
+            self.change_speed(-2) # Slow down
+        elif move_number == 5:
+            self.change_angle(0) # Go straight
+            self.change_speed(2) # Speed up
+        elif move_number == 6:
+            self.change_angle(0) # Go straight
+            self.change_speed(-4) # Hard slow down
+        elif move_number == 7:
+            self.change_angle(0) # Go straight
+            self.change_speed(4) # Hard speed up
+        else:
+            return # Do nothing
+        
+    def change_angle(self, angle):
+        self.angle += angle
+        self.angles.append(angle)           
+        
+    def change_speed(self, speed):
+        if self.speed + speed < 0:
+            self.speed = 0
+        elif self.speed + speed > 30:
+            self.speed = 30
+        else:
+            self.speed += speed
+        
+        if speed != 0:
+            self.speed_changes += 1
+            
+    def car_touches_line(self):
+        # Make a rectangle around the car
+        car_rect = pg.Rect(self.position[0], self.position[1], Car.CAR_SIZE_X, Car.CAR_SIZE_Y)
+        
+        # Check if the car rectangle intersects with the start line
+        return car_rect.colliderect(pg.Rect(self.top_start_point[0], self.top_start_point[1], 10, 10)) or \
+               car_rect.colliderect(pg.Rect(self.bottom_start_point[0], self.bottom_start_point[1], 10, 10))
+               
+    def is_on_left_side_of_line(self):
+        return self.corners[0][0] < self.top_start_point[0] or self.corners[1][0] < self.top_start_point[0]
+            
+    def has_touched_finish(self):
+        if self.car_touches_line():
+            if self.is_on_left_side_of_line():
+                return 1
+            else:
+                return -1
+        
+        return 0
 
