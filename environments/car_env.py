@@ -220,7 +220,7 @@ class F1_Env(gym.Env):
             "position": Box(low=np.array([0, 0]), high=np.array(self.track.track_size), dtype=np.float32),
             "angle": Box(low=np.array([-360]), high=np.array([360]), dtype=np.float32),
             "speed": Box(low=np.array([0]), high=np.array([np.inf]), dtype=np.float32),
-            "distances_to_edges": Box(low=np.array([0, 0, 0]), high=np.array([np.inf, np.inf, np.inf]),
+            "distances_to_edges": Box(low=np.array([0, 0, 0, 0]), high=np.array([np.inf, np.inf, np.inf, np.inf]),
                                       dtype=np.float32),
         })
 
@@ -259,9 +259,9 @@ class F1_Env(gym.Env):
         start_y = rng.integers(rect_y, max_start_y + 1)
 
         self._agent_location = np.array([start_x, start_y], dtype=np.int64)
-
+        info = {}
         # Return the initial observation
-        return self._get_obs()
+        return self._get_obs(), info
 
     def step(self, action):
         self.car.apply_action(action)
