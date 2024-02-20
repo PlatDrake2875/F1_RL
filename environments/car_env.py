@@ -106,7 +106,7 @@ class Car:
         self.angle = angle
         self.speed = speed
         # Directly use the resized image path after ensuring it's created
-        self.car_path = f"car2d_{Car.CAR_WIDTH}_{Car.CAR_HEIGHT}.png"
+        self.car_path = f"../cars/car2d_{Car.CAR_WIDTH}_{Car.CAR_HEIGHT}.png"
         # Ensure the resized image is created if needed
         TrackUtils.resize_and_save_if_needed(car_path, Car.CAR_WIDTH, Car.CAR_HEIGHT, self.car_path)
         # Update car_size with the actual dimensions
@@ -147,7 +147,7 @@ class Track:
 
     def __init__(self, track_path):
         self.track_path = track_path
-        resized_track_image_path = f"track01_{Track.TRACK_WIDTH}_{Track.TRACK_HEIGHT}.png"
+        resized_track_image_path = f"../tracks/track01_{Track.TRACK_WIDTH}_{Track.TRACK_HEIGHT}.png"
         resized_track_image = TrackUtils.resize_and_save_if_needed(track_path, Track.TRACK_WIDTH, Track.TRACK_HEIGHT,
                                                                    resized_track_image_path)
         if resized_track_image is not None:
@@ -207,7 +207,7 @@ class Track:
 class F1_Env(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, track_path="./tracks/track01.png", car_path="./cars/car2d.png", render_mode=None):
+    def __init__(self, track_path="../tracks/track01.png", car_path="../cars/car2d.png", render_mode=None):
 
         self._agent_location = None
         self.car = Car(car_path)
@@ -265,12 +265,20 @@ class F1_Env(gym.Env):
 
     def step(self, action):
         self.car.apply_action(action)
+
+        # Move the agent and update its location
         self._agent_location = self.move_agent()
 
+        # Check if there's a collision
         terminated = self.check_collision()
 
-        reward = -1 if terminated else 1
+        # Get the observation for the current state
         observation = self._get_obs()
+
+        # Compute the reward based on observation and collision
+        reward = self.compute_reward(observation, terminated)
+
+        # Additional info can be returned if needed
         info = {}
 
         return observation, reward, terminated, False, info
@@ -300,6 +308,26 @@ class F1_Env(gym.Env):
         }
 
         return observation
+
+    @staticmethod
+    def compute_reward(observation, collision):
+        # Constants for reward calculation
+        alive_bonus = 100
+        speed_factor = 5
+        distance_factor = 1
+
+        # Check if the agent is alive (not collided)
+        alive_reward = alive_bonus if not collision else -alive_bonus
+
+        # Reward for speed (encourages faster speeds)
+        speed_reward = observation["speed"][0] * speed_factor
+
+        # Reward for distance to edges (encourages staying away from edges)
+        distance_reward = np.mean(observation["distances_to_edges"]) * distance_factor
+
+        # Total reward
+        total_reward = alive_reward + speed_reward + distance_reward
+        return total_reward
 
     def _init_render(self):
         """Initialize the rendering components."""
