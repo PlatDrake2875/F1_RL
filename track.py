@@ -72,7 +72,7 @@ class Track:
         bottom_left_green = self.find_pixel(0, self.width, 1, lambda color: color == Track.START_LINE_COLOR, 1)
         top_left_green = self.find_pixel(self.height - 1, -1, -1, lambda color: color == Track.START_LINE_COLOR, 0)
         
-        return (bottom_left_green, top_left_green)
+        return bottom_left_green, top_left_green
     
     def is_start_line_touch(self, x, y):
         return not self.out_of_bounds(x, y) and self.game_map.get_at((x, y)) == Track.START_LINE_COLOR
