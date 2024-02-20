@@ -92,9 +92,9 @@ class CarAgent(Car2):
 
     def draw(self, screen):
         super().draw(screen)        
-        for r in self.radars:
-            pg.draw.line(screen, (0, 255, 0), self.center, r[0], 1)
-            pg.draw.circle(screen, (0, 255, 0), r[0], 5)
+        # for r in self.radars:
+        #     pg.draw.line(screen, (0, 255, 0), self.center, r[0], 1)
+        #     pg.draw.circle(screen, (0, 255, 0), r[0], 5)
 
     def update(self):
         super().update()        
@@ -202,7 +202,13 @@ def run_simulation(map_path, is_training):
 
         clock = pg.time.Clock()
 
-        while car.alive:
+        start_race_time = time.time()
+
+        while True:
+
+            # if time.time() - start_race_time >= 30:
+            #     print(car.distance)
+            #     break
 
             screen.blit(my_track.game_map, (0, 0))
             car.draw(screen)
@@ -214,11 +220,16 @@ def run_simulation(map_path, is_training):
             car.move(action)
             car.update()
 
-            if car.has_touched_finish() == 1:
-                car.alive = False
+            if not car.alive:
+                distance = car.distance
+                break
 
             pg.display.flip()
-            clock.tick(10)
+            clock.tick(60)
+
+        elapsed_race_time = time.time() - start_race_time
+        print( distance, elapsed_race_time)
+        print(distance / elapsed_race_time)
 
 if __name__ == "__main__":         
-    run_simulation('tracks/track02_resized.png', False)
+    run_simulation('tracks/track01_resized.png', False)
