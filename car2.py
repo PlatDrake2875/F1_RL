@@ -304,13 +304,15 @@ class Car2:
 
     def move(self, move_number):
         if move_number == 1:
-            self.change_speed(-1) # Slow down
+            self.change_speed(-3) # Slow down
         elif move_number == 2:
-            self.change_speed(1) # Speed up
+            self.change_speed(3) # Speed up
         elif move_number == 3:
-            self.change_angle(45) # Turn left
+            self.change_angle(20) # Turn left
+            self.change_speed(-1)
         elif move_number == 4:
-            self.change_angle(-45) # Turn right
+            self.change_angle(-20) # Turn right
+            self.change_speed(-1)
         else:
             return 0 # Do nothing
         
