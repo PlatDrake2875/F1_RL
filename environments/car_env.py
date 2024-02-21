@@ -1,5 +1,6 @@
 import os
 import random
+import time
 
 import numpy as np
 import pygame
@@ -99,8 +100,8 @@ class TrackUtils:
 
 
 class Car:
-    CAR_WIDTH = 30
-    CAR_HEIGHT = 30
+    CAR_WIDTH = 60
+    CAR_HEIGHT = 60
 
     def __init__(self, car_path, speed=5, angle=5):
         self.angle = angle
@@ -116,13 +117,13 @@ class Car:
         if action == 0:
             return
         elif action == 1:
-            self.add_speed(5)
+            self.add_speed(3)
         elif action == 2:
-            self.add_speed(-5)
+            self.add_speed(-3)
         elif action == 3:
-            self.add_angle(2)
+            self.add_angle(20)
         elif action == 4:
-            self.add_angle(-2)
+            self.add_angle(-20)
 
     def add_speed(self, speed):
         self.speed += speed
@@ -151,18 +152,19 @@ class Track:
         resized_track_image = TrackUtils.resize_and_save_if_needed(track_path, Track.TRACK_WIDTH, Track.TRACK_HEIGHT,
                                                                    resized_track_image_path)
         if resized_track_image is not None:
+            self.track_path = resized_track_image_path
+
             self.track_image = cv2.cvtColor(resized_track_image, cv2.COLOR_BGR2GRAY)
             self.track_size = (Track.TRACK_WIDTH, Track.TRACK_HEIGHT)
         else:
             print(f"Track file not found: {track_path}")
             self.track_image = None
             self.track_size = (0, 0)
+        print(self.track_path)
 
     def calculate_distances_to_edges(self, _agent_location, car_size):
-        # Get the car's center position
         center_x, center_y = _agent_location + car_size[0] // 2
 
-        # Helper function to find distance to the nearest white pixel in a given direction
         def find_distance_to_edge(start_x, start_y, delta_x, delta_y):
             distance = 0
             x, y = start_x, start_y
@@ -207,11 +209,16 @@ class Track:
 class F1_Env(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, track_path="../tracks/track01.png", car_path="../cars/car2d.png", render_mode=None):
-
+    def __init__(self, track_path="../tracks/track02.png", car_path="../cars/car2d.png", render_mode=None):
+        self.start_time = None
         self._agent_location = None
+
         self.car = Car(car_path)
         self.track = Track(track_path)
+
+        self.total_distance = 0
+        self.total_speed_accumulated = 0
+        self.step_counter = 0
 
         self.window_track_size = (Track.TRACK_WIDTH, Track.TRACK_HEIGHT)  # Update this line
         self.start_rect_coords = TrackUtils.get_start_rect_coords(track_path)
@@ -234,9 +241,14 @@ class F1_Env(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+        self.start_time = time.time()
 
         self.car.speed = 0
         self.car.angle = 0  # Starting angle pointing to the right
+
+        self.total_distance = 0
+        self.total_speed_accumulated = 0
+        self.step_counter = 0
 
         # Seed the random number generator for reproducibility
         rng = np.random.default_rng(seed)
@@ -270,10 +282,19 @@ class F1_Env(gym.Env):
         self._agent_location = self.move_agent()
 
         # Check if there's a collision
-        terminated = self.check_collision()
+        if time.time() - self.start_time > 30:
+            terminated = True
+        else:
+            terminated = self.check_illegal()
 
         # Get the observation for the current state
         observation = self._get_obs()
+
+        dx, dy = self.car.calculate_movement()
+        distance_this_step = np.sqrt(dx ** 2 + dy ** 2)
+        self.total_distance += distance_this_step
+        self.total_speed_accumulated += self.car.speed
+        self.step_counter += 1
 
         # Compute the reward based on observation and collision
         reward = self.compute_reward(observation, terminated)
@@ -294,6 +315,9 @@ class F1_Env(gym.Env):
         self._agent_location = np.array([new_x, new_y], dtype=np.int64)
         return self._agent_location
 
+    def check_illegal(self):
+        return self.check_collision() and self.is_car_left_of_start()
+
     def check_collision(self):
         return self.track.check_collision(self._agent_location, self.car.car_size)
 
@@ -309,24 +333,37 @@ class F1_Env(gym.Env):
 
         return observation
 
-    @staticmethod
-    def compute_reward(observation, collision):
+    def compute_reward(self, observation, collision):
         # Constants for reward calculation
-        alive_bonus = 100
+        alive_bonus = 10
         speed_factor = 5
         distance_factor = 1
+        wrong_direction_penalty = -100
+        stationary_penalty = -50
 
         # Check if the agent is alive (not collided)
         alive_reward = alive_bonus if not collision else -alive_bonus
 
-        # Reward for speed (encourages faster speeds)
-        speed_reward = observation["speed"][0] * speed_factor
+        speed_reward = 0
+        # Penalty for being stationary or moving backwards
+        if observation["speed"][0] <= 0:
+            speed_penalty = stationary_penalty
+        else:
+            # Reward for speed (encourages faster speeds)
+            speed_reward = observation["speed"][0] * speed_factor
+            speed_penalty = 0
 
         # Reward for distance to edges (encourages staying away from edges)
         distance_reward = np.mean(observation["distances_to_edges"]) * distance_factor
 
-        # Total reward
-        total_reward = alive_reward + speed_reward + distance_reward
+        # Check if the car is on the wrong side of the start point
+        if not self.is_car_left_of_start():
+            direction_penalty = wrong_direction_penalty
+        else:
+            direction_penalty = 0  # No penalty if the car is on the correct side
+
+        # Total reward calculation
+        total_reward = alive_reward + speed_reward + distance_reward + direction_penalty + speed_penalty
         return total_reward
 
     def _init_render(self):
@@ -401,3 +438,14 @@ class F1_Env(gym.Env):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 print("Window closed.")
+
+    def is_car_left_of_start(self):
+        # Calculate the right edge of the starting rectangle
+        if self.start_rect_coords is not None:
+            start_rect_right_edge = self.start_rect_coords[0] + self.start_rect_coords[2]  # x + width
+            # Compare the car's x-coordinate (left edge) with the right edge of the start rectangle
+            car_left_edge = self._agent_location[0]
+            return car_left_edge < start_rect_right_edge
+        else:
+            print("Starting point not defined.")
+            return False

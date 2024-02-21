@@ -11,19 +11,18 @@ import pickle
 
 
 class CarAgent(Car2):
-
     MAX_LENGTH = 200
 
-    epsilon = 1.0 # Allow the model to do a lot of trial and error on the beggining
-    epsilon_decay = 0.00013 # Decay per episode.
-    lr = 1.0 #Initial Learning Rate
+    epsilon = 1.0  # Allow the model to do a lot of trial and error on the beginning
+    epsilon_decay = 0.00013  # Decay per episode.
+    lr = 1.0  # Initial Learning Rate
     lr_decay = 0.00013
     gamma = 0.8
 
     def __init__(self, car_sprite, pos_x, pos_y, angle, speed, game_map, border_color,
                  map_width, map_height, top_start_point, bottom_start_point):
         super().__init__(car_sprite, pos_x, pos_y, angle, speed, game_map, border_color,
-                 map_width, map_height, top_start_point, bottom_start_point)
+                         map_width, map_height, top_start_point, bottom_start_point)
 
         self.n_action = 5
         self.radars = []
@@ -43,14 +42,14 @@ class CarAgent(Car2):
 
     # Given (state, action, reward, next_state) pair after a transition made in the environment and the episode index
     def updateExperience(self, state, action, reward, next_state):
-            best_actionIndex_fromNextState = np.argmax(self.q[next_state])
-            best_actionValue_fromNextState = self.q[next_state][best_actionIndex_fromNextState]
+        best_actionIndex_fromNextState = np.argmax(self.q[next_state])
+        best_actionValue_fromNextState = self.q[next_state][best_actionIndex_fromNextState]
 
-            target = reward + CarAgent.gamma * best_actionValue_fromNextState
-            self.q[state][action] = self.q[state][action] + (CarAgent.lr * (target - self.q[state][action]))
-            # q[state,action] = q[state,action] + lr * (
-            #             reward + gamma * np.max(q[new_state, :]) - q[state,action])
-            
+        target = reward + CarAgent.gamma * best_actionValue_fromNextState
+        self.q[state][action] = self.q[state][action] + (CarAgent.lr * (target - self.q[state][action]))
+        # q[state,action] = q[state,action] + lr * (
+        #             reward + gamma * np.max(q[new_state, :]) - q[state,action])
+
     def get_reward(self):
         x, y = self.radars[0][-1], self.radars[1][-1]
         diff = abs(x - y)
@@ -59,16 +58,16 @@ class CarAgent(Car2):
         if self.has_touched_finish() == 1:
             return 10000
         if self.speed == 0:
-            return -10-diff
+            return -10 - diff
         if self.is_collision():
-            return -10-diff
-        return self.distance-diff
-        
+            return -10 - diff
+        return self.distance - diff
+
     def check_radar(self, degree):
         length = 0
         x = int(self.center[0] + length * math.cos(math.radians(360 - (self.angle + degree))))
         y = int(self.center[1] + length * math.sin(math.radians(360 - (self.angle + degree))))
-        
+
         while not self.is_collision_points(x, y) and length < CarAgent.MAX_LENGTH:
             length += 1
             x = int(self.center[0] + length * math.cos(math.radians(360 - (self.angle + degree))))
@@ -76,35 +75,34 @@ class CarAgent(Car2):
 
         dist = int(pg.math.Vector2(x, y).distance_to(self.center))
         self.radars.append([(x, y), dist])
-        
+
         if degree == 0:
             length = 0
             x = int(self.center[0] + length * math.cos(math.radians(360 - (self.angle + degree))))
             y = int(self.center[1] + length * math.sin(math.radians(360 - (self.angle + degree))))
-            
+
             while not self.is_collision_points(x, y) and length < CarAgent.MAX_LENGTH + 100:
                 length += 1
                 x = int(self.center[0] + length * math.cos(math.radians(360 - (self.angle + degree))))
                 y = int(self.center[1] + length * math.sin(math.radians(360 - (self.angle + degree))))
-            
+
             dist = int(pg.math.Vector2(x, y).distance_to(self.center))
             self.radars.append([(x, y), dist])
 
     def draw(self, screen):
-        super().draw(screen)        
+        super().draw(screen)
         for r in self.radars:
             pg.draw.line(screen, (0, 255, 0), self.center, r[0], 1)
             pg.draw.circle(screen, (0, 255, 0), r[0], 5)
 
     def update(self):
-        super().update()        
+        super().update()
         self.radars.clear()
         self.check_radar(-90)
         self.check_radar(90)
 
-        
-def run_simulation(map_path='tracks/track01_resized.png', is_training = True):  
 
+def run_simulation(map_path='tracks/track01_resized.png', is_training=True):
     my_track = Track(map_path)
     pg.init()
     flags = pg.RESIZABLE
@@ -130,13 +128,14 @@ def run_simulation(map_path='tracks/track01_resized.png', is_training = True):
 
         if i % 500 == 0:
             print(i)
-        
-        car = CarAgent('cars/car2d.png', start_pos_x, start_pos_y, angle, speed, my_track.game_map, my_track.border_color, my_track.width, my_track.height, top_start_line, bottom_start_line)
+
+        car = CarAgent('cars/car2d.png', start_pos_x, start_pos_y, angle, speed, my_track.game_map,
+                       my_track.border_color, my_track.width, my_track.height, top_start_line, bottom_start_line)
         car.q = q_table
         car.update()
 
-        max_reward = -1        
-        car_start_time = time.time() 
+        max_reward = -1
+        car_start_time = time.time()
 
         while car.alive:
             if time.time() - car_start_time > 30:
@@ -144,7 +143,7 @@ def run_simulation(map_path='tracks/track01_resized.png', is_training = True):
 
             CarAgent.epsilon = max(CarAgent.epsilon - CarAgent.epsilon_decay, 0.01)
             CarAgent.lr = max(CarAgent.lr - CarAgent.lr_decay, 0.01)
- 
+
             screen.blit(my_track.game_map, (0, 0))
             car.draw(screen)
 
@@ -156,7 +155,7 @@ def run_simulation(map_path='tracks/track01_resized.png', is_training = True):
 
             action = car.select_action(state, CarAgent.epsilon)
             dist = car.distance
-            
+
             car.move(action)
             car.update()
 
@@ -173,7 +172,7 @@ def run_simulation(map_path='tracks/track01_resized.png', is_training = True):
 
             pg.display.flip()
             # clock.tick(60)
-        
+
         rewards[i] = max_reward
 
     print(finish)
@@ -182,7 +181,6 @@ def run_simulation(map_path='tracks/track01_resized.png', is_training = True):
     elapsed_time = end_time - start_time
     print(f'Time elapsed: {elapsed_time} seconds')
 
-    
     if is_training:
         plt.plot(rewards)
         plt.savefig(f'alg_q_learning/alg_qlearning_{map_path[7:]}.png')
@@ -192,5 +190,6 @@ def run_simulation(map_path='tracks/track01_resized.png', is_training = True):
         # f.close()
 
     print(np.max(rewards))
-                
+
+
 run_simulation()
