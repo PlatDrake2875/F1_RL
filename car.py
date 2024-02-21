@@ -30,10 +30,10 @@ class Car:
         Border_color (Color): The color used to detect borders/collisions.
     """
 
-    START_SPEED = 10
+    START_SPEED = 15
     BORDER_EDGE = 5
-    CAR_SIZE_X = 15
-    CAR_SIZE_Y = 15
+    CAR_SIZE_X = 60
+    CAR_SIZE_Y = 60
 
     def __init__(self, car_sprite, pos_x, pos_y, angle, speed, game_map, border_color,
                  map_width, map_height, top_start_point, bottom_start_point):
@@ -59,6 +59,7 @@ class Car:
         self.map_height = map_height
         self.position = [pos_x, pos_y]
         self.angle = angle
+        self.start_angle = angle
         self.speed = speed
         self.center = [self.position[0] + Car.CAR_SIZE_X / 2, self.position[1] + Car.CAR_SIZE_Y / 2]
         self.alive = True
@@ -264,19 +265,17 @@ class Car:
 
     def move(self, move_number):
         if move_number == 1:
-            self.change_angle(1)  # Turn left
+            self.change_speed(-3) # Slow down
         elif move_number == 2:
-            self.change_angle(-1)  # Turn left
+            self.change_speed(3) # Speed up
         elif move_number == 3:
-            self.change_angle(5)  # Hard Turn left
+            self.change_angle(20) # Turn left
+            self.change_speed(-1)
         elif move_number == 4:
-            self.change_angle(-5)  # Hard Turn left
-        elif move_number == 5:
-            self.change_speed(-0.2)  # Slow down
-        elif move_number == 6:
-            self.change_speed(0.2)  # speed up
+            self.change_angle(-20) # Turn right
+            self.change_speed(-1)
         else:
-            return  # do nothing
+            return 0 # Do nothing
 
     def change_angle(self, angle):
         self.angle += angle
@@ -302,6 +301,10 @@ class Car:
             car_rect.colliderect(pg.Rect(self.bottom_start_point[0], self.bottom_start_point[1], 10, 10))
 
     def is_on_left_side_of_line(self):
+        if abs(abs(self.angle % 360) - abs(self.start_angle % 360)) > 45:
+            # print(self.angle, self.start_angle)
+            # print("Finish gresit")
+            return 0
         return self.corners[0][0] < self.top_start_point[0] or self.corners[1][0] < self.top_start_point[0]
 
     def has_touched_finish(self):
@@ -309,6 +312,7 @@ class Car:
             if self.is_on_left_side_of_line():
                 return 1
             else:
+                self.is_alive = 0
                 return -1
 
         return 0

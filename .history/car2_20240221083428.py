@@ -116,19 +116,19 @@ class Car2:
         for corner in self.corners:
             if self.is_out_of_bounds(corner[0], corner[1]):
                 return True
-        
+
         # Check if the line between the corners intersects with the border
         for i in range(4):
             x1, y1 = int(self.corners[i][0]), int(self.corners[i][1])
             x2, y2 = int(self.corners[(i + 1) % 4][0]), int(self.corners[(i + 1) % 4][1])
-            
+
             for x in range(min(x1, x2), max(x1, x2)):
                 y = int((y2 - y1) / (x2 - x1) * (x - x1) + y1)
                 if self.is_collision_points(x, y):
                     return True
-                    
+
         return False
-    
+
     def is_collision_points(self, x, y):
         """
         Determines if the given point collides with the border based on the color.
@@ -140,7 +140,6 @@ class Car2:
             bool: True if the point collides with the border, False otherwise.
         """
         return self.is_out_of_bounds(x, y) or self.game_map.get_at((x, y)) == self.border_color
-        
 
     def check_collision(self):
         """
@@ -273,7 +272,7 @@ class Car2:
             bool: True if the car is operational (alive), False otherwise.
         """
         return self.alive
-    
+
     # def move(self, move_number):
     #     if move_number == 0:
     #         self.change_angle(10) # Turn left
@@ -314,8 +313,8 @@ class Car2:
             self.change_angle(-20) # Turn right
             self.change_speed(-1)
         else:
-            return 0 # Do nothing
-        
+            return 0  # Do nothing
+
     # def move(self, move_number):
     #     if move_number == 1:
     #         self.change_speed(-1) # Slow down
@@ -327,11 +326,11 @@ class Car2:
     #         self.change_angle(-45) # Turn right
     #     else:
     #         return 0 # Do nothing
-        
+
     def change_angle(self, angle):
         self.angle += angle
-        self.angles.append(angle)           
-        
+        self.angles.append(angle)
+
     def change_speed(self, speed):
         if self.speed + speed < 0:
             self.speed = 0
@@ -339,31 +338,30 @@ class Car2:
             self.speed = 30
         else:
             self.speed += speed
-        
+
         if speed != 0:
             self.speed_changes += 1
-            
+
     def car_touches_line(self):
         # Make a rectangle around the car
         car_rect = pg.Rect(self.position[0], self.position[1], Car2.CAR_SIZE_X, Car2.CAR_SIZE_Y)
-        
+
         # Check if the car rectangle intersects with the start line
         return car_rect.colliderect(pg.Rect(self.top_start_point[0], self.top_start_point[1], 10, 10)) or \
-               car_rect.colliderect(pg.Rect(self.bottom_start_point[0], self.bottom_start_point[1], 10, 10))
-               
+            car_rect.colliderect(pg.Rect(self.bottom_start_point[0], self.bottom_start_point[1], 10, 10))
+
     def is_on_left_side_of_line(self):
         if abs(abs(self.angle % 360) - abs(self.start_angle % 360)) > 45:
             # print(self.angle, self.start_angle)
             # print("Finish gresit")
             return 0
         return self.corners[0][0] < self.top_start_point[0] or self.corners[1][0] < self.top_start_point[0]
-            
+
     def has_touched_finish(self):
         if self.car_touches_line():
             if self.is_on_left_side_of_line():
                 return 1
             else:
                 return -1
-        
-        return 0
 
+        return 0
